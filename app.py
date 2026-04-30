@@ -13,13 +13,10 @@ from reportlab.lib.styles import getSampleStyleSheet
 import io
 
 # ---------------- DATABASE CONNECTION ----------------
+import os
+
 def get_db_connection():
-    return psycopg2.connect(
-        host="localhost",
-        database="loan_app",
-        user="postgres",
-        password="Sumit@12345"
-    )
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
 # ---------------- APP SETUP ----------------
 app = Flask(__name__)
