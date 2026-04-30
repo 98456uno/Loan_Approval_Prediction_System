@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Loan Prediction</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<script>
+function toggleSidebar() {
+    let sidebar = document.getElementById("sidebar");
+    let overlay = document.getElementById("overlay");
+
+    if (sidebar.style.width === "250px") {
+        sidebar.style.width = "0";
+        overlay.style.display = "none";
+    } else {
+        sidebar.style.width = "250px";
+        overlay.style.display = "block";
+    }
+}
+</script>
+<body>
+
+<div class="navbar">
+
+    <div class="navbar-left">
+        <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+        <div class="logo">Loan AI</div>
+    </div>
+
+    <div class="user">
+        Welcome, {{ user if user else current_user.id }}
+    </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" onclick="toggleSidebar()">✖</a>
+    <a href="/">Home</a>
+    <a href="/history">History</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="toggleSidebar()"></div>
+
+
+
+
+
+
+<!-- HERO SECTION -->
+<div class="hero">
+    <div class="hero-box">
+
+        <div class="hero-text">
+            <h1>Check Your Loan Eligibility Instantly</h1>
+            <p>Enter your financial details and get AI-powered prediction in seconds.</p>
+        </div>
+
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='imageeeee.png') }}">
+        </div>
+
+    </div>
+</div>
+
+<!-- FORM SECTION -->
+<div class="form-container">
+
+    <div class="form-card">
+        <h2>Applicant Details</h2>
+
+        <form action="/predict" method="POST">
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Applicant Age (Years)</label>
+                    <input type="number" name="person_age" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Applicant Gender</label>
+                    <select name="person_gender">
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Education Level</label>
+                    <select name="person_education">
+                        <option value="0">Master</option>
+                        <option value="1">High School</option>
+                        <option value="2">Bachelors</option>
+                        <option value="3">Graduate</option>
+                        <option value="4">Associate</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Housing Status</label>
+                    <select name="person_home_ownership">
+                        <option value="0">Rent</option>
+                        <option value="1">Own</option>
+                        <option value="2">Mortgage</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Monthly Income (₹)</label>
+                    <input type="number" name="person_income">
+                </div>
+
+                <div class="input-group">
+                    <label>Requested Loan Amount (₹)</label>
+                    <input type="number" name="loan_amount">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Interest Rate (%)</label>
+                    <input type="number" step="0.01" name="loan_int_rate">
+                </div>
+
+                <div class="input-group">
+                    <label>Loan-to-Income Ratio (%)</label>
+                    <input type="number" step="0.01" name="loan_percent_income">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Credit History Length (Years)</label>
+                    <input type="number" name="cb_person_cred_hist_length">
+                </div>
+
+                <div class="input-group">
+                    <label>Employment Experience (Years)</label>
+                    <input type="number" name="person_emp_exp">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Credit Score (CIBIL)</label>
+                    <input type="number" name="credit_score">
+                </div>
+
+                <div class="input-group">
+                    <label>Previous Loan Defaults</label>
+                    <select name="previous_loan_defaults_on_file">
+                        <option value="0">Yes</option>
+                        <option value="1">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group full">
+                    <label>Purpose of Loan</label>
+                    <select name="loan_intent">
+                        <option value="0">Personal</option>
+                        <option value="1">Education</option>
+                        <option value="2">Medical</option>
+                        <option value="3">Business</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit">Predict Loan Status</button>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>

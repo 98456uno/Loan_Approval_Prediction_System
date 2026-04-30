@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>History</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    padding: 20px;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* LEFT SIDE (MENU + LOGO) */
+.navbar-left {
+    display: flex;
+    align-items: center;
+}
+
+/* MENU BUTTON */
+.menu-btn {
+    font-size: 22px;
+    cursor: pointer;
+    margin-right: 15px;
+    color: #2d6cdf;
+}
+
+/* SIDEBAR */
+.sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #2c3e50;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    z-index: 1000;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+}
+
+.sidebar a:hover {
+    background: #34495e;
+}
+
+/* OVERLAY */
+#overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    top: 0;
+    left: 0;
+    display: none;
+    z-index: 999;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background: #2d6cdf;
+    color: white;
+}
+
+    .approved {
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.rejected {
+    color: #c62828;
+    font-weight: 600;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+
+    <div class="navbar-left">
+        <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+        <div><b>Loan AI</b></div>
+    </div>
+
+    <div class="user">
+        Welcome, {{ current_user.id }}
+    </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" onclick="toggleSidebar()">✖</a>
+    <a href="/">Home</a>
+    <a href="/history">History</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="toggleSidebar()"></div>
+
+<h2>Your Prediction History</h2>
+<div style="margin-bottom: 15px; display:flex; gap:10px;">
+
+    <input type="text" id="searchInput"
+        placeholder="Search..."
+        style="padding:10px; width: 250px;">
+
+    <select id="filterDecision" style="padding:10px;">
+        <option value="">All</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+    </select>
+
+</div>
+<table>
+<tr>
+    <th onclick="sortTable(0)">Monthly Income (₹)</th>
+<th onclick="sortTable(1)">Loan Amount (₹)</th>
+<th onclick="sortTable(2)">Credit Score</th>
+<th onclick="sortTable(3)">Default Risk (%)</th>
+<th onclick="sortTable(4)">Decision</th>
+</tr>
+
+{% for row in data %}
+<tr>
+    <td>₹ {{ "{:,}".format(row[0]|int) }}</td>
+    <td>₹ {{ "{:,}".format(row[1]|int) }}</td>
+    <td>{{ row[2]|int }}</td>
+    <td>{{ row[3]|round(0)|int }}%</td>
+    <td>
+    <span class="{{ 'approved' if row[4] == 'Loan Approved' else 'rejected' }}">
+        {{ row[4] }}
+    </span>
+</td>
+</tr>
+{% endfor %}
+</table>
+
+<!-- JS -->
+<script>
+function toggleSidebar() {
+    let sidebar = document.getElementById("sidebar");
+    let overlay = document.getElementById("overlay");
+
+    if (sidebar.style.width === "250px") {
+        sidebar.style.width = "0";
+        overlay.style.display = "none";
+    } else {
+        sidebar.style.width = "250px";
+        overlay.style.display = "block";
+    }
+}
+
+document.getElementById("filterDecision").addEventListener("change", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("table tr");
+
+    rows.forEach((row, index) => {
+        if (index === 0) return;
+
+        let decision = row.cells[4].innerText.toLowerCase();
+
+        if (filter === "" || decision.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput = document.getElementById("searchInput");
+    const filterDropdown = document.getElementById("filterDecision");
+
+    function filterTable() {
+        let searchValue = searchInput.value.toLowerCase();
+        let filterValue = filterDropdown.value.toLowerCase();
+
+        let rows = document.querySelectorAll("table tr");
+
+        rows.forEach((row, index) => {
+            if (index === 0) return; // skip header
+
+            let text = row.textContent.toLowerCase();
+            let decision = row.cells[4].textContent.toLowerCase();
+
+            let matchesSearch = text.includes(searchValue);
+            let matchesFilter = filterValue === "" || decision.includes(filterValue);
+
+            if (matchesSearch && matchesFilter) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
+    searchInput.addEventListener("keyup", filterTable);
+    filterDropdown.addEventListener("change", filterTable);
+
+});
+
+let sortDirection = true;
+
+function sortTable(columnIndex) {
+    let table = document.querySelector("table");
+    let rows = Array.from(table.rows).slice(1); // skip header
+
+    rows.sort((a, b) => {
+        let x = a.cells[columnIndex].innerText.replace(/[^0-9.-]+/g,"");
+        let y = b.cells[columnIndex].innerText.replace(/[^0-9.-]+/g,"");
+
+        return sortDirection ? x - y : y - x;
+    });
+
+    sortDirection = !sortDirection;
+
+    rows.forEach(row => table.appendChild(row));
+}
+
+</script>
+
+</body>
+</html>

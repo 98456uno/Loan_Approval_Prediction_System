@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title if title else "Loan AI" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="main-container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>Loan AI</h2>
+
+        <a href="/">🏠 Home</a>
+        <a href="/dashboard">📊 Dashboard</a>
+        <a href="/history">📜 History</a>
+        <a href="/logout">🚪 Logout</a>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <div class="topbar">
+            Welcome, {{ user }}
+        </div>
+
+        {% block content %}{% endblock %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,462 @@
+/* BODY */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #eef2f7;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 40px;
+    background: #1e3c72;
+    color: white;
+}
+
+.logo {
+    font-weight: bold;
+}
+
+.nav-links a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+}
+
+/* HERO SECTION */
+.hero {
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+/* HERO BOX */
+.hero-box {
+    background: white;
+    width: 85%;
+    border-radius: 12px;
+    padding: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px 5px 20px rgba(0,0,0,0.08);
+}
+
+/* TEXT */
+.hero-text h1 {
+    font-size: 36px;
+    color: #1e3c72;
+}
+
+.hero-text p {
+    color: #555;
+}
+
+/* IMAGE */
+
+.hero-image {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.hero-image img {
+    width: 350px;   /* increase this */
+    max-width: none; /* IMPORTANT */
+    height: auto;
+}
+
+/* FORM SECTION */
+.form-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* FORM CARD */
+.form-card {
+    background: white;
+    width: 70%;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.12);
+    transition: 0.3s ease;
+}
+
+/* subtle hover lift */
+.form-card:hover {
+    transform: translateY(-4px);
+}
+
+/* FORM ROW */
+.row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+/* INPUT GROUP */
+.input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group.full {
+    flex: 100%;
+}
+
+/* LABEL */
+.input-group label {
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+/* INPUTS */
+input, select {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: 0.25s ease;
+    font-size: 14px;
+}
+
+/* focus effect (🔥 important) */
+input:focus, select:focus {
+    border-color: #2a5298;
+    box-shadow: 0 0 6px rgba(42,82,152,0.3);
+}
+
+/* hover effect */
+input:hover, select:hover {
+    border-color: #2a5298;
+}
+
+/* BUTTON */
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2a5298, #1e3c72);  /* updated */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s ease;
+    letter-spacing: 0.5px;   /* add here */
+}
+
+/* hover effect (🔥 big visual upgrade) */
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 6px 15px rgba(0,0,0,0.2);
+}
+
+/* click effect */
+button:active {
+    transform: scale(0.98);
+}
+.result-container {
+    width: 70%;
+    margin: 30px auto;
+}
+
+.result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+}
+
+
+
+/* COLORS */
+.approved {
+    background: linear-gradient(90deg, #2e7d32, #4caf50);
+}
+
+.rejected {
+    background: linear-gradient(90deg, #c62828, #e53935);
+}
+
+.meter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge {
+    width: 220px;
+    height: 110px;
+    background: conic-gradient(
+        #c62828 0deg 60deg,
+        #f9a825 60deg 120deg,
+        #2e7d32 120deg 180deg
+    );
+    border-radius: 220px 220px 0 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+}
+
+/* NEEDLE */
+.needle {
+    width: 4px;
+    height: 90px;
+    background: #111;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg);
+    transition: transform 1.2s ease-out;
+    border-radius: 3px;
+}
+
+/* CENTER DOT */
+.center-dot {
+    width: 14px;
+    height: 14px;
+    background: #111;
+    border-radius: 50%;
+    position: absolute;
+    bottom: -7px;   /* 🔥 pushes it perfectly centered */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* VALUE TEXT */
+.meter-value {
+    margin-top: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.feature-container {
+    width: 70%;
+    margin: 30px auto;
+}
+
+.feature-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
+}
+
+.bar {
+    margin-bottom: 15px;
+}
+.bar-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.progress {
+    height: 10px;
+    background: #ddd;
+    border-radius: 10px;
+}
+
+.progress div {
+    height: 100%;
+    background: #2a5298;
+    border-radius: 10px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2d6cdf;
+}
+
+.nav-links a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    color: #2d6cdf;
+}
+
+.user {
+    font-size: 14px;
+    color: #555;
+}
+
+.explanation-box {
+    background: white;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.explanation-box ul {
+    padding-left: 20px;
+}
+
+.explanation-box li {
+    margin: 10px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.explanation-box {
+    width: 100%;              /* take full container width */
+    box-sizing: border-box;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
+}
+
+/* MENU BUTTON */
+.menu-btn {
+    font-size: 22px;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+/* SIDEBAR */
+.sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #2c3e50;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+    z-index: 1000;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+}
+
+.sidebar a:hover {
+    background: #34495e;
+}
+
+/* OVERLAY */
+#overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    top: 0;
+    left: 0;
+    display: none;
+    z-index: 999;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* NEW: group left side */
+.navbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.menu-btn {
+    font-size: 22px;
+    cursor: pointer;
+    margin-right: 15px;
+    display: block;   /* ADD THIS */
+}
+
+.menu-btn {
+    font-size: 24px !important;
+    cursor: pointer !important;
+    margin-right: 15px !important;
+    display: block !important;
+    color: #2d6cdf !important;   /* make it visible */
+    z-index: 2000;
+}
+
+/* ================= RISK BADGE ================= */
+
+.risk-badge{
+    padding:8px 18px;
+    border-radius:25px;
+    font-size:14px;
+    font-weight:bold;
+    color:white;
+    display:inline-block;
+    animation: glow 1.8s infinite alternate;
+}
+
+/* LOW RISK (GREEN) */
+.risk-low{
+    background:#2e7d32;
+    box-shadow:0 0 8px #2e7d32;
+}
+
+/* MEDIUM RISK (ORANGE) */
+.risk-medium{
+    background:#f57c00;
+    box-shadow:0 0 8px #f57c00;
+}
+
+/* HIGH RISK (RED) */
+.risk-high{
+    background:#c62828;
+    box-shadow:0 0 8px #c62828;
+}
+
+/* GLOW ANIMATION */
+@keyframes glow{
+    from{
+        filter: drop-shadow(0 0 5px currentColor);
+    }
+    to{
+        filter: drop-shadow(0 0 15px currentColor);
+    }
+}
+
+.progress div {
+    animation: growBar 1s ease;
+}
+
+@keyframes growBar {
+    from { width: 0; }
+}
+

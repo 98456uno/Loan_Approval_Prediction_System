@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="title">
+        <h1>Loan Application Prediction</h1>
+        <p>Powered by Machine Learning</p>
+    </div>
+
+    <div class="card">
+
+        <h2>Login</h2>
+
+        <form method="POST">
+
+            <div class="input-box">
+                <input type="text" name="login_id" required>
+                <label>Email or Username</label>
+            </div>
+
+            <div class="input-box">
+                <input type="password" name="password" required>
+                <label>Password</label>
+            </div>
+
+            <div class="options">
+                <label><input type="checkbox"> Remember Me</label>
+                <a href="#">Forgot Password?</a>
+            </div>
+
+            <button type="submit">Login</button>
+
+        </form>
+
+        {% if error %}
+        <p style="color:red; text-align:center;">{{ error }}</p>
+        {% endif %}
+
+        <p class="switch">
+            New here? <a href="/signup">Sign up now</a>
+        </p>
+
+    </div>
+
+    <div class="bottom-section">
+
+        <h2>Predict Your Loan Approval Chances Instantly!</h2>
+
+        <div class="features">
+            <div class="feature">
+                <div class="icon">📊</div>
+                <p>Fast Prediction</p>
+            </div>
+
+            <div class="feature">
+                <div class="icon">🎯</div>
+                <p>Accurate Results</p>
+            </div>
+
+            <div class="feature">
+                <div class="icon">🔒</div>
+                <p>Secure & Reliable</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

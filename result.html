@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Loan Result</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<script>
+function toggleSidebar() {
+    let sidebar = document.getElementById("sidebar");
+    let overlay = document.getElementById("overlay");
+
+    if (sidebar.style.width === "250px") {
+        sidebar.style.width = "0";
+        overlay.style.display = "none";
+    } else {
+        sidebar.style.width = "250px";
+        overlay.style.display = "block";
+    }
+}
+</script>
+<body>
+
+<div class="navbar">
+
+    <div class="navbar-left">
+        <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+        <div class="logo">Loan AI</div>
+    </div>
+
+    <div class="user">
+        Welcome, {{ user if user else current_user.id }}
+    </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" onclick="toggleSidebar()">✖</a>
+    <a href="/">Home</a>
+    <a href="/history">History</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="hero-box">
+
+        <div class="hero-text">
+            <h1>Loan Prediction Result</h1>
+            <p>Based on your inputs, here is your loan eligibility.</p>
+        </div>
+
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='imageeeee.png') }}">
+        </div>
+
+    </div>
+</div>
+
+<!-- INPUT SUMMARY -->
+<div class="form-container">
+    <div class="form-card">
+
+        <h2>Applicant Details</h2>
+
+        <div class="summary-grid">
+            <div><strong>Income:</strong> {{ "{:,}".format(income|int) }}</div>
+            <div><strong>Loan Amount:</strong> {{ "{:,}".format(loan|int) }}</div>
+            <div><strong>Credit Score:</strong> {{ credit|int }}</div>
+            <div><strong>Risk:</strong> {{ risk }}</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-container">
+
+    <h2>Prediction Result</h2>
+
+    <div class="result-card {{ 'approved' if approval_status == 'Loan Approved' else 'rejected' }}">
+
+        <div class="result-text">
+            <h3>{{ approval_status }}</h3>
+            <p><strong>Approval Probability:</strong> {{ probability|round(0)|int }}%</p>
+            <p><strong>Risk of Default:</strong> {{ approval_prob|round(0)|int }}%</p>
+            <p><strong>Risk Level:</strong> {{ risk }}</p>
+        </div>
+
+        <!-- GAUGE -->
+        <div class="meter">
+    <div class="gauge">
+        <div class="needle" id="needle"></div>
+        <div class="center-dot"></div>
+    </div>
+    <div class="meter-value">{{ probability }}%</div>
+</div>
+
+
+    </div>
+
+</div>
+
+<div class="result-container">
+
+    <div class="explanation-box">
+        <h3>Why this decision?</h3>
+
+        <ul>
+            {% for reason in explanations %}
+                <li>✔ {{ reason }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+
+<form action="/download_report" method="get">
+
+    <input type="hidden" name="income" value="{{ income }}">
+    <input type="hidden" name="loan" value="{{ loan }}">
+    <input type="hidden" name="credit" value="{{ credit }}">
+    <input type="hidden" name="decision" value="{{ approval_status }}">
+    <input type="hidden" name="approval_prob" value="{{ approval_prob }}">
+    <input type="hidden" name="probability" value="{{ probability }}">
+    <input type="hidden" name="risk" value="{{ risk }}">
+
+    {% for reason in explanations %}
+        <input type="hidden" name="explanations" value="{{ reason }}">
+    {% endfor %}
+
+    <button type="submit">📄 Download Full Report</button>
+</form>
+
+<!-- FEATURE IMPORTANCE -->
+<div class="feature-container">
+
+    <h2>Feature Importance</h2>
+
+    <div class="feature-card">
+
+{% for name, value in feature_data %}
+    <div class="bar">
+        <div class="bar-top">
+            <span>{{ name }}</span>
+            <span>{{ value }}%</span>
+        </div>
+        <div class="progress">
+            <div style="width: {{ value }}%"></div>
+        </div>
+    </div>
+{% endfor %}
+
+</div>
+</div>
+<!-- ANIMATION SCRIPT -->
+<script>
+    let prob = {{ probability }};
+    let angle = prob * 1.8;
+
+    setTimeout(() => {
+        document.getElementById("needle").style.transform =
+            "translateX(-50%) rotate(" + angle + "deg)";
+    }, 300);
+</script>
+
+</body>
+</html>
