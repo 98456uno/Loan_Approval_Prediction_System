@@ -112,57 +112,119 @@ def generate_explanation(input_data, default_prob):
 
     ratio = input_data["loan_amnt"] / input_data["person_income"]
 
+    # ---------------- LOAN TO INCOME ----------------
     if ratio > 0.5:
-        reasons.append(f"High loan ratio ({round(ratio*100,1)}%)")
+        reasons.append(f"Loan amount is high relative to income ({round(ratio*100,1)}%), increasing financial burden")
     elif ratio < 0.2:
-        reasons.append(f"Manageable loan ratio ({round(ratio*100,1)}%)")
+        reasons.append(f"Loan amount is comfortably manageable ({round(ratio*100,1)}% of income)")
     else:
-        reasons.append(f"Moderate loan ratio ({round(ratio*100,1)}%)")
+        reasons.append(f"Loan-to-income ratio is moderate ({round(ratio*100,1)}%)")
 
+    # ---------------- CREDIT SCORE ----------------
     if input_data["credit_score"] < 600:
-        reasons.append("Low credit score")
+        reasons.append("Low credit score indicates higher credit risk")
     elif input_data["credit_score"] > 700:
-        reasons.append("Good credit score")
+        reasons.append("Strong credit score improves repayment reliability")
     else:
-        reasons.append("Average credit score")
+        reasons.append("Average credit score reflects moderate creditworthiness")
 
+    # ---------------- EMPLOYMENT ----------------
     if input_data["person_emp_exp"] < 2:
-        reasons.append("Low employment experience")
+        reasons.append("Limited employment experience suggests unstable income source")
     else:
-        reasons.append("Stable employment")
+        reasons.append("Stable employment history supports consistent income flow")
 
+    # ---------------- FINAL DECISION ----------------
     if default_prob > 60:
-        reasons.append(f"High risk ({default_prob}%) → Rejected")
+        reasons.append(f"High default probability ({default_prob}%) resulted in loan rejection")
     elif default_prob < 30:
-        reasons.append(f"Low risk ({default_prob}%) → Approved")
+        reasons.append(f"Low default probability ({default_prob}%) supports loan approval")
     else:
-        reasons.append(f"Moderate risk ({default_prob}%)")
+        reasons.append(f"Moderate default probability ({default_prob}%) indicates balanced risk")
 
     return reasons
 
 # ---------------- PDF ----------------
 def generate_pdf(data):
     buffer = io.BytesIO()
+
     doc = SimpleDocTemplate(buffer)
     styles = getSampleStyleSheet()
 
+    from reportlab.platypus import Table, TableStyle, Image
+    from reportlab.lib import colors
+
     content = []
 
-    content.append(Paragraph("Loan Prediction Report", styles['Title']))
+    # ---------------- HEADER ----------------
+    content.append(Paragraph("<b>LoanPredict AI - Loan Report</b>", styles['Title']))
     content.append(Spacer(1, 15))
 
     content.append(Paragraph(f"User: {data['user']}", styles['Normal']))
     content.append(Spacer(1, 10))
 
-    content.append(Paragraph(f"Income: {data['income']}", styles['Normal']))
-    content.append(Paragraph(f"Loan: {data['loan']}", styles['Normal']))
-    content.append(Paragraph(f"Credit Score: {data['credit']}", styles['Normal']))
+    # ---------------- APPLICANT TABLE ----------------
+    content.append(Paragraph("<b>Applicant Details</b>", styles['Heading2']))
 
-    content.append(Spacer(1, 10))
+    applicant_data = [
+        ["Field", "Value"],
+        ["Income", data['income']],
+        ["Loan Amount", data['loan']],
+        ["Credit Score", data['credit']]
+    ]
 
-    content.append(Paragraph(f"Decision: {data['decision']}", styles['Heading2']))
-    content.append(Paragraph(f"Risk: {data['risk']}", styles['Normal']))
-    content.append(Paragraph(f"Probability: {data['default_prob']}%", styles['Normal']))
+    table = Table(applicant_data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke)
+    ]))
+
+    content.append(table)
+    content.append(Spacer(1, 15))
+
+    # ---------------- RESULT SECTION ----------------
+    content.append(Paragraph("<b>Prediction Result</b>", styles['Heading2']))
+
+    decision_color = "green" if data['decision'] == "Loan Approved" else "red"
+
+    content.append(Paragraph(
+        f"<font color='{decision_color}'><b>{data['decision']}</b></font>",
+        styles['Heading3']
+    ))
+
+    result_data = [
+        ["Metric", "Value"],
+        ["Approval Probability", f"{data['approval_prob']}%"],
+        ["Risk of Default", f"{data['default_prob']}%"],
+        ["Risk Level", data['risk']]
+    ]
+
+    table2 = Table(result_data)
+    table2.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige)
+    ]))
+
+    content.append(table2)
+    content.append(Spacer(1, 15))
+
+    # ---------------- EXPLANATION ----------------
+    content.append(Paragraph("<b>Explanation</b>", styles['Heading2']))
+
+    for reason in data['explanations']:
+        content.append(Paragraph(f"• {reason}", styles['Normal']))
+
+    content.append(Spacer(1, 20))
+
+    # ---------------- FOOTER ----------------
+    content.append(Paragraph(
+        "<i>This is an AI-generated loan assessment report.</i>",
+        styles['Normal']
+    ))
 
     doc.build(content)
 
@@ -301,17 +363,20 @@ def predict():
         return f"ERROR: {str(e)}"
 
 # ---------------- DOWNLOAD PDF ----------------
+
 @app.route('/download_report')
 @login_required
 def download_report():
     data = {
-        "user": current_user.username,
+        "user": current_user.id,
         "income": request.args.get("income"),
         "loan": request.args.get("loan"),
         "credit": request.args.get("credit"),
         "decision": request.args.get("decision"),
+        "approval_prob": request.args.get("approval_prob"),
         "default_prob": request.args.get("probability"),
-        "risk": request.args.get("risk")
+        "risk": request.args.get("risk"),
+        "explanations": request.args.getlist("explanations")
     }
 
     pdf = generate_pdf(data)
@@ -321,7 +386,8 @@ def download_report():
         as_attachment=True,
         download_name="loan_report.pdf",
         mimetype='application/pdf'
-    )
+    )    
+    
 
 
 
