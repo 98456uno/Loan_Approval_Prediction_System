@@ -1,21 +1,4 @@
 /* BODY */
-body {
-
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-
-    /* BACKGROUND IMAGE */
-    background:
-        linear-gradient(rgba(15, 60, 117, 0.75), rgba(28, 110, 213, 0.75)),
-        url("../static/bg.png");
-
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-
-    color: white;
-
-}
 
 /* CONTAINER */
 .container {
