@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <title>Sign Up</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
-</head>
 
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+
+<style>
+body {
+    background:
+        linear-gradient(rgba(15, 60, 117, 0.75), rgba(28, 110, 213, 0.75)),
+        url("{{ url_for('static', filename='bg.png') }}");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+</style>
+
+</head>
+    
 <body>
 
 <div class="container">
