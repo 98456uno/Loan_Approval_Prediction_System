@@ -146,91 +146,164 @@ def generate_explanation(input_data, default_prob):
 
 # ---------------- PDF ----------------
 def generate_pdf(data):
-    buffer = io.BytesIO()
 
-    doc = SimpleDocTemplate(buffer)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+
     styles = getSampleStyleSheet()
 
-    from reportlab.platypus import Table, TableStyle, Image
-    from reportlab.lib import colors
+    # Custom Styles
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Title'],
+        fontSize=20,
+        textColor=colors.darkblue,
+        alignment=1,
+        spaceAfter=15
+    )
+
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        textColor=colors.darkblue,
+        spaceAfter=10
+    )
+
+    normal_center = ParagraphStyle(
+        'Center',
+        parent=styles['Normal'],
+        alignment=1
+    )
 
     content = []
 
     # ---------------- HEADER ----------------
-    content.append(Paragraph("<b>LoanPredict AI - Loan Report</b>", styles['Title']))
-    content.append(Spacer(1, 15))
-
-    content.append(Paragraph(f"User: {data['user']}", styles['Normal']))
+    content.append(Paragraph("<b>LoanPredict AI</b>", styles['Heading2']))
+    content.append(Paragraph("Smart Decisions, Better Futures", styles['Normal']))
     content.append(Spacer(1, 10))
 
-    # ---------------- APPLICANT TABLE ----------------
-    content.append(Paragraph("<b>Applicant Details</b>", styles['Heading2']))
+    now = datetime.now().strftime("%d %b %Y | %I:%M %p")
+    content.append(Paragraph(f"Report Generated On: {now}", styles['Normal']))
 
-    applicant_data = [
+    content.append(Spacer(1, 20))
+
+    # ---------------- TITLE ----------------
+    content.append(Paragraph("<b>LOAN PREDICTION REPORT</b>", title_style))
+    content.append(Paragraph("AI-Powered Loan Approval & Risk Assessment", normal_center))
+
+    content.append(Spacer(1, 20))
+
+    # ---------------- USER ----------------
+    user_box = Table([
+        ["User:", data['user']]
+    ], colWidths=[100, 350])
+
+    user_box.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.lightblue),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+        ('BOX', (0,0), (-1,-1), 1, colors.darkblue),
+        ('PADDING', (0,0), (-1,-1), 8)
+    ]))
+
+    content.append(user_box)
+    content.append(Spacer(1, 20))
+
+    # ---------------- APPLICANT DETAILS ----------------
+    content.append(Paragraph("1. Applicant Details", section_style))
+
+    table_data = [
         ["Field", "Value"],
-        ["Income", data['income']],
-        ["Loan Amount", data['loan']],
+        ["Income", f"₹ {data['income']}"],
+        ["Loan Amount", f"₹ {data['loan']}"],
         ["Credit Score", data['credit']]
     ]
 
-    table = Table(applicant_data)
+    table = Table(table_data, colWidths=[200, 250])
+
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
-        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('GRID', (0,0), (-1,-1), 1, colors.grey),
         ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke)
     ]))
 
     content.append(table)
+    content.append(Spacer(1, 20))
+
+    # ---------------- RESULT ----------------
+    content.append(Paragraph("2. Prediction Result", section_style))
+
+    decision_color = colors.green if data['decision'] == "Loan Approved" else colors.red
+
+    decision_box = Table([
+        [f"{data['decision']}"]
+    ], colWidths=[450],
+       rowHeights=[40])
+
+    decision_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), decision_color),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # 👈 vertical center
+        ('FONTSIZE', (0, 0), (-1, -1), 16),
+        ('BOX', (0, 0), (-1, -1), 1, colors.grey),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12)
+    ]))
+
+    content.append(decision_box)
     content.append(Spacer(1, 15))
 
-    # ---------------- RESULT SECTION ----------------
-    content.append(Paragraph("<b>Prediction Result</b>", styles['Heading2']))
-
-    decision_color = "green" if data['decision'] == "Loan Approved" else "red"
-
-    content.append(Paragraph(
-        f"<font color='{decision_color}'><b>{data['decision']}</b></font>",
-        styles['Heading3']
-    ))
-
-    result_data = [
-        ["Metric", "Value"],
+    # ---------------- METRICS ----------------
+    metrics = [
         ["Approval Probability", f"{data['approval_prob']}%"],
         ["Risk of Default", f"{data['default_prob']}%"],
         ["Risk Level", data['risk']]
     ]
 
-    table2 = Table(result_data)
-    table2.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
-        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,1), (-1,-1), colors.beige)
+    metric_table = Table(metrics, colWidths=[250, 200])
+
+    metric_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 1, colors.grey),
+        ('PADDING', (0,0), (-1,-1), 8)
     ]))
 
-    content.append(table2)
-    content.append(Spacer(1, 15))
+    content.append(metric_table)
+    content.append(Spacer(1, 20))
 
     # ---------------- EXPLANATION ----------------
-    content.append(Paragraph("<b>Explanation</b>", styles['Heading2']))
+    content.append(Paragraph("3. Explanation", section_style))
 
-    for reason in data['explanations']:
+    for reason in data.get("explanations", []):
         content.append(Paragraph(f"• {reason}", styles['Normal']))
+        content.append(Spacer(1, 5))
 
     content.append(Spacer(1, 20))
 
     # ---------------- FOOTER ----------------
     content.append(Paragraph(
         "<i>This is an AI-generated loan assessment report.</i>",
-        styles['Normal']
+        normal_center
     ))
 
+    content.append(Paragraph(
+        "<i>Final lending decisions should be made by authorized personnel only.</i>",
+        normal_center
+    ))
+
+    content.append(Spacer(1, 10))
+
+    content.append(Paragraph(
+        "<b>Thank you for using LoanPredict AI!</b>",
+        normal_center
+    ))
+
+    # BUILD
     doc.build(content)
 
     buffer.seek(0)
     return buffer
-
 # ---------------- ROUTES ----------------
 
 @app.route('/')
@@ -367,6 +440,7 @@ def predict():
 @app.route('/download_report')
 @login_required
 def download_report():
+
     data = {
         "user": current_user.username,
         "income": request.args.get("income"),
@@ -386,7 +460,7 @@ def download_report():
         as_attachment=True,
         download_name="loan_report.pdf",
         mimetype='application/pdf'
-    )    
+    )
     
 
 
