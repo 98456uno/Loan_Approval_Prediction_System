@@ -79,7 +79,7 @@ def predict_loan(input_data_dict):
 
     decision = "Loan Rejected" if default_prob > 60 else "Loan Approved"
 
-    return decision, risk, round(default_prob, 2)
+    return decision, risk, float(round(default_prob, 2))
 
 # ---------------- FEATURE IMPORTANCE ----------------
 def calculate_feature_importance(input_data):
@@ -271,13 +271,13 @@ def predict():
         INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
         VALUES (%s, %s, %s, %s, %s, %s)
         """, (
-            current_user.username,
-            input_data["person_income"],
-            input_data["loan_amnt"],
-            input_data["credit_score"],
-            default_prob,
-            decision
-        ))
+    str(current_user.username),
+    float(input_data["person_income"]),
+    float(input_data["loan_amnt"]),
+    float(input_data["credit_score"]),
+    float(default_prob),
+    str(decision)
+))
 
         conn.commit()
         cur.close()
