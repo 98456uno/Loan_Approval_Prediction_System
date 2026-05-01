@@ -1,4 +1,4 @@
-```python
+
 import psycopg2
 from flask import Flask, render_template, request, redirect, send_file
 import pandas as pd
