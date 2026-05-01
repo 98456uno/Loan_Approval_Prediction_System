@@ -290,7 +290,7 @@ def login():
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT * FROM users WHERE username=%s OR email=%s",
+            "SELECT id, username, email, password FROM users WHERE username=%s OR email=%s",
             (login_id, login_id)
         )
         user = cur.fetchone()
@@ -301,10 +301,13 @@ def login():
         if not user:
             return render_template('login.html', error="User not found ❌")
 
-        if not check_password_hash(user[2], password):
+        # ✅ FIXED HERE
+        if not check_password_hash(user[3], password):
             return render_template('login.html', error="Invalid password ❌")
 
-        login_user(User(user[1]))
+        # ✅ FIXED HERE (use id)
+        login_user(User(user[0]))
+
         return redirect('/')
 
     return render_template('login.html')
