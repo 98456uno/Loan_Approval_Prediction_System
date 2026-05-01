@@ -368,7 +368,7 @@ def predict():
 @login_required
 def download_report():
     data = {
-        "user": current_user.id,
+        "user": current_user.username,
         "income": request.args.get("income"),
         "loan": request.args.get("loan"),
         "credit": request.args.get("credit"),
