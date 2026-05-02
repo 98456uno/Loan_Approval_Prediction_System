@@ -74,9 +74,9 @@ def predict_loan(input_data_dict):
 
     default_prob = model.predict_proba(input_df_final)[0][1] * 100
 
-    if default_prob < 40:
+    if default_prob < 30:
         risk = "Low Risk"
-    elif default_prob < 55:
+    elif default_prob < 65:
         risk = "Medium Risk"
     else:
         risk = "High Risk"
@@ -395,6 +395,10 @@ def predict():
             "loan_amnt": float(request.form["loan_amount"]),
             "loan_percent_income": float(request.form["loan_percent_income"]) / 100,
             "credit_score": float(request.form["credit_score"]),
+            "loan_int_rate":float(request.form["interest_rate"]),
+            "cb_person_credit_history_length":request.form["credit_history"],
+            "education": request.form["education"].upper(),
+            "previous_loan_defaults_on_file":request.form["loan_defaults"].upper(),
             "loan_intent": request.form["loan_intent"].upper(),
             "person_gender": request.form["person_gender"].lower(),
             "person_home_ownership": request.form["person_home_ownership"].upper()
