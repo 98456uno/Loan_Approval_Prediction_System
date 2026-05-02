@@ -392,7 +392,7 @@ def predict():
             "person_age": int(request.form["person_age"]),
             "person_income": float(request.form["person_income"]),
             "person_emp_exp": float(request.form["person_emp_exp"]),
-            "loan_amnt": float(request.form["loan_amount"]),
+            "loan_amnt": float(request.form["loan_amnt"]),
             "loan_percent_income": float(request.form["loan_percent_income"]),
             "credit_score": float(request.form["credit_score"]),
             "loan_int_rate": float(request.form["loan_int_rate"]),
