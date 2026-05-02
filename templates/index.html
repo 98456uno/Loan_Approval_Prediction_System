@@ -84,8 +84,8 @@ function toggleSidebar() {
                 <div class="input-group">
                     <label>Applicant Gender</label>
                     <select name="person_gender">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
                     </select>
                 </div>
             </div>
@@ -94,20 +94,20 @@ function toggleSidebar() {
                 <div class="input-group">
                     <label>Education Level</label>
                     <select name="person_education">
-                        <option value="MASTER">Master</option>
-                        <option value="HIGH_SCHOOL">High School</option>
-                        <option value="BACHELORS">Bachelors</option>
-                        <option value="GRADUATE">Graduate</option>
-                        <option value="ASSOCIATE">Associate</option>
+                        <option value="0">Master</option>
+                        <option value="1">High School</option>
+                        <option value="2">Bachelors</option>
+                        <option value="3">Graduate</option>
+                        <option value="4">Associate</option>
                     </select>
                 </div>
 
                 <div class="input-group">
                     <label>Housing Status</label>
                     <select name="person_home_ownership">
-                        <option value="RENT">Rent</option>
-                        <option value="OWN">Own</option>
-                        <option value="MORTGAGE">Mortgage</option>
+                        <option value="0">Rent</option>
+                        <option value="1">Own</option>
+                        <option value="2">Mortgage</option>
                     </select>
                 </div>
             </div>
@@ -115,12 +115,12 @@ function toggleSidebar() {
             <div class="row">
                 <div class="input-group">
                     <label>Annual Income (₹)</label>
-                    <input type="number" name="person_income" placeholder="e.g. 600000 per year">
+                    <input type="number" name="person_income">
                 </div>
 
                 <div class="input-group">
                     <label>Requested Loan Amount (₹)</label>
-                    <input type="number" name="loan_amnt">
+                    <input type="number" name="loan_amount">
                 </div>
             </div>
 
@@ -157,8 +157,8 @@ function toggleSidebar() {
                 <div class="input-group">
                     <label>Previous Loan Defaults</label>
                     <select name="previous_loan_defaults_on_file">
-                        <option value="YES">Yes</option>
-                        <option value="NO">No</option>
+                        <option value="0">Yes</option>
+                        <option value="1">No</option>
                     </select>
                 </div>
             </div>
@@ -171,10 +171,6 @@ function toggleSidebar() {
                         <option value="1">Education</option>
                         <option value="2">Medical</option>
                         <option value="3">Business</option>
-                         <option value="4">Venture</option>
-                        <option value="5">Home Improovement</option>
-                        <option value="6">Debt Consolidation</option>
-                        <option value="7">Business</option>
                     </select>
                 </div>
             </div>
