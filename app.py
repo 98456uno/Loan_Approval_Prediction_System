@@ -388,23 +388,25 @@ def logout():
 @login_required
 def predict():
     try:
-       input_data = {
-    "person_age": int(request.form["person_age"]),
-    "person_income": float(request.form["person_income"]),
-    "person_emp_exp": float(request.form["person_emp_exp"]),
-    "loan_amnt": float(request.form["loan_amount"]),
-    "loan_percent_income": float(request.form["loan_percent_income"])/100,
-    "credit_score": float(request.form["credit_score"]),
-    "loan_int_rate": float(request.form["interest_rate"]),
-    "cb_person_credit_history_length": float(request.form["credit_history"]),
-    "education": request.form["person_education"].upper(),
-    "previous_loan_defaults_on_file": request.form["previous_loan_default"].upper(),
-    "loan_intent": request.form["loan_intent"].upper(),
-    "person_gender": request.form["person_gender"].lower(),
-    "person_home_ownership": request.form["person_home_ownership"].upper()
-}
+        input_data = {
+            "person_age": int(request.form["person_age"]),
+            "person_income": float(request.form["person_income"]),
+            "person_emp_exp": float(request.form["person_emp_exp"]),
+            "loan_amnt": float(request.form["loan_amount"]),
+            "loan_percent_income": float(request.form["loan_percent_income"]),
+            "credit_score": float(request.form["credit_score"]),
+            "loan_int_rate": float(request.form["loan_int_rate"]),
+            "cb_person_credit_history_length": float(request.form["cb_person_credit_history_length"]),
+            "person_education": request.form["person_education"],
+            "previous_loan_defaults_on_file": request.form["previous_loan_defaults_on_file"],
+            "loan_intent": request.form["loan_intent"],
+            "person_gender": request.form["person_gender"],
+            "person_home_ownership": request.form["person_home_ownership"]
+        }
 
+        # ✅ SAME INDENT LEVEL
         decision, risk, default_prob = predict_loan(input_data)
+
         approval_prob = 100 - default_prob
 
         explanations = generate_explanation(input_data, default_prob)
@@ -417,13 +419,13 @@ def predict():
         INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
         VALUES (%s, %s, %s, %s, %s, %s)
         """, (
-    str(current_user.username),
-    float(input_data["person_income"]),
-    float(input_data["loan_amnt"]),
-    float(input_data["credit_score"]),
-    float(default_prob),
-    str(decision)
-))
+            current_user.username,
+            input_data["person_income"],
+            input_data["loan_amnt"],
+            input_data["credit_score"],
+            default_prob,
+            decision
+        ))
 
         conn.commit()
         cur.close()
