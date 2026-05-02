@@ -76,12 +76,12 @@ def predict_loan(input_data_dict):
 
     if default_prob < 30:
         risk = "Low Risk"
-    elif default_prob < 60:
+    elif default_prob < 50:
         risk = "Medium Risk"
     else:
         risk = "High Risk"
 
-    decision = "Loan Rejected" if default_prob > 60 else "Loan Approved"
+    decision = "Loan Rejected" if default_prob > 50 else "Loan Approved"
 
     return decision, risk, float(round(default_prob, 2))
 
