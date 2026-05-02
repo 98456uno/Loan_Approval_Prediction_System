@@ -485,7 +485,7 @@ def download_report():
     }
 
     pdf = generate_pdf(data)
-
+    
     return send_file(
         pdf,
         as_attachment=True,
