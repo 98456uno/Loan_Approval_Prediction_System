@@ -74,9 +74,9 @@ def predict_loan(input_data_dict):
 
     default_prob = model.predict_proba(input_df_final)[0][1] * 100
 
-    if default_prob < 30:
+    if default_prob < 40:
         risk = "Low Risk"
-    elif default_prob < 50:
+    elif default_prob < 70:
         risk = "Medium Risk"
     else:
         risk = "High Risk"
