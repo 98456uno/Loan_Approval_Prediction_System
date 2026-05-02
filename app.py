@@ -381,6 +381,9 @@ def logout():
     return redirect('/login')
 
 # ---------------- PREDICT ----------------
+
+
+
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
