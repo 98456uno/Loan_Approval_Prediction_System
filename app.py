@@ -396,7 +396,7 @@ def predict():
             "loan_percent_income": float(request.form["loan_percent_income"]),
             "credit_score": float(request.form["credit_score"]),
             "loan_int_rate": float(request.form["loan_int_rate"]),
-            "cb_person_credit_history_length": float(request.form["cb_person_credit_history_length"]),
+            "cb_person_credit_history_length": float(request.form["cb_person_credit_hist_length"]),
             "person_education": request.form["person_education"],
             "previous_loan_defaults_on_file": request.form["previous_loan_defaults_on_file"],
             "loan_intent": request.form["loan_intent"],
