@@ -3,33 +3,28 @@ from flask import Flask, render_template, request, redirect, send_file
 import pandas as pd
 import joblib
 from werkzeug.security import generate_password_hash, check_password_hash
-
-
-# 🔐 Login imports
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-
-# PDF
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+import os
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
-from xhtml2pdf import pisa
 import io
 from datetime import datetime
 
-
 # ---------------- DATABASE CONNECTION ----------------
 def get_db_connection():
-    return psycopg2.connect(
-        host="localhost",
-        database="loan_app",
-        user="postgres",
-        password="Sumit@12345"
-    )
+    url = os.environ.get("DATABASE_URL")
+
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    return psycopg2.connect(url)
 
 # ---------------- APP SETUP ----------------
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
+app.secret_key = "super_secret_key"
 
 # ---------------- LOGIN SETUP ----------------
 login_manager = LoginManager()
@@ -38,19 +33,31 @@ login_manager.login_view = "login"
 
 # ---------------- USER CLASS ----------------
 class User(UserMixin):
-    def __init__(self, id):
+    def __init__(self, id, username):
         self.id = id
+        self.username = username
 
 # ---------------- LOAD USER ----------------
 @login_manager.user_loader
 def load_user(user_id):
-    return User(user_id)
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, username FROM users WHERE id=%s", (user_id,))
+    user = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if user:
+        return User(user[0], user[1])
+    return None
 
 # ---------------- LOAD MODEL ----------------
 model = joblib.load("loan_model.pkl")
 feature_names = joblib.load("feature_names.pkl")
 
-# ---------------- PREDICTION FUNCTION ----------------
+# ---------------- PREDICTION ----------------
 def predict_loan(input_data_dict):
 
     input_df = pd.DataFrame([input_data_dict])
@@ -81,7 +88,7 @@ def predict_loan(input_data_dict):
 
     return decision, risk, round(default_prob, 2)
 
-
+# ---------------- FEATURE IMPORTANCE ----------------
 def calculate_feature_importance(input_data):
     score = input_data["credit_score"]
     income = input_data["person_income"]
@@ -97,11 +104,8 @@ def calculate_feature_importance(input_data):
     income_p = (income_weight / total) * 100
     loan_p = (loan_weight / total) * 100
 
-    # Fix rounding drift
-    total_sum = credit + income_p + loan_p
-    correction = 100 - total_sum
-
-    credit += correction  # adjust one value slightly
+    correction = 100 - (credit + income_p + loan_p)
+    credit += correction
 
     return [
         ("Credit Score", round(credit, 1)),
@@ -109,7 +113,7 @@ def calculate_feature_importance(input_data):
         ("Loan Amount", round(loan_p, 1))
     ]
 
-# ---------------- EXPLANATION FUNCTION ----------------
+# ---------------- EXPLANATION ----------------
 def generate_explanation(input_data, default_prob):
     reasons = []
 
@@ -147,10 +151,7 @@ def generate_explanation(input_data, default_prob):
 
     return reasons
 
-# ---------------- PDF FUNCTION ----------------
-
-
-
+# ---------------- PDF ----------------
 def generate_pdf(data):
 
     buffer = io.BytesIO()
@@ -315,7 +316,7 @@ def generate_pdf(data):
 @app.route('/')
 @login_required
 def home():
-    return render_template('index.html', user=current_user.id)
+    return render_template('index.html', user=current_user.username)
 
 # ---------------- SIGNUP ----------------
 @app.route('/signup', methods=['GET', 'POST'])
@@ -325,28 +326,9 @@ def signup():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        confirm_password = request.form['confirm_password']
-
-        if password != confirm_password:
-            return render_template('signup.html', error="Passwords do not match ❌")
-
-        if len(password) < 6:
-            return render_template('signup.html', error="Password must be at least 6 characters ❌")
 
         conn = get_db_connection()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
-        if cur.fetchone():
-            cur.close()
-            conn.close()
-            return render_template('signup.html', error="Username already exists ❌")
-
-        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
-        if cur.fetchone():
-            cur.close()
-            conn.close()
-            return render_template('signup.html', error="Email already registered ❌")
 
         hashed_password = generate_password_hash(password)
 
@@ -375,7 +357,7 @@ def login():
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT * FROM users WHERE username=%s OR email=%s",
+            "SELECT id, username, password FROM users WHERE username=%s OR email=%s",
             (login_id, login_id)
         )
         user = cur.fetchone()
@@ -384,12 +366,12 @@ def login():
         conn.close()
 
         if not user:
-            return render_template('login.html', error="User not found ❌")
+            return render_template('login.html', error="User not found")
 
         if not check_password_hash(user[2], password):
-            return render_template('login.html', error="Invalid password ❌")
+            return render_template('login.html', error="Invalid password")
 
-        login_user(User(user[1]))
+        login_user(User(user[0], user[1]))
         return redirect('/')
 
     return render_template('login.html')
@@ -402,6 +384,9 @@ def logout():
     return redirect('/login')
 
 # ---------------- PREDICT ----------------
+
+
+
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
@@ -456,14 +441,14 @@ def predict():
         feature_data=feature_data,
         user=current_user.id
     )
-
 # ---------------- DOWNLOAD PDF ----------------
+
 @app.route('/download_report')
 @login_required
 def download_report():
 
     data = {
-        "user": current_user.id,
+        "user": current_user.username,
         "income": request.args.get("income"),
         "loan": request.args.get("loan"),
         "credit": request.args.get("credit"),
@@ -482,6 +467,9 @@ def download_report():
         download_name="loan_report.pdf",
         mimetype='application/pdf'
     )
+    
+
+
 
 # ---------------- HISTORY ----------------
 @app.route('/history')
@@ -492,7 +480,7 @@ def history():
 
     cur.execute(
         "SELECT income, loan, credit_score, probability, decision FROM predictions WHERE username=%s",
-        (current_user.id,)
+        (current_user.username,)
     )
 
     data = cur.fetchall()
@@ -501,6 +489,7 @@ def history():
     conn.close()
 
     return render_template("history.html", data=data)
+
 
 # ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
@@ -514,7 +503,7 @@ def dashboard():
         FROM predictions
         WHERE username=%s
         ORDER BY created_at
-    """, (current_user.id,))
+    """, (current_user.username,))
 
     data = cur.fetchall()
 
@@ -524,14 +513,14 @@ def dashboard():
     income = [row[0] for row in data]
     loan = [row[1] for row in data]
     probability = [row[2] for row in data]
-    dates = [row[4].strftime("%d-%b")for row in data]
+    dates = [row[4].strftime("%d-%b") for row in data]
 
     approved = sum(1 for row in data if row[3] == "Loan Approved")
     rejected = sum(1 for row in data if row[3] == "Loan Rejected")
 
     total = len(data)
 
-    avg_risk = round(sum(probability) / len(probability),1)if probability else 0
+    avg_risk = round(sum(probability) / len(probability), 1) if probability else 0
 
     if avg_risk < 30:
         risk_level = "Low"
@@ -553,11 +542,204 @@ def dashboard():
         total=total,
         avg_risk=avg_risk,
         dates=dates,
-        user=current_user.id,
-        risk=risk_level,  # ✅ ADD THIS
-        risk_class=risk_class  # ✅ ADD THIS
+        user=current_user.username,
+        risk=risk_level,
+        risk_class=risk_class
     )
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Loan Prediction</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<script>
+function toggleSidebar() {
+    let sidebar = document.getElementById("sidebar");
+    let overlay = document.getElementById("overlay");
+
+    if (sidebar.style.width === "250px") {
+        sidebar.style.width = "0";
+        overlay.style.display = "none";
+    } else {
+        sidebar.style.width = "250px";
+        overlay.style.display = "block";
+    }
+}
+</script>
+<body>
+
+<div class="navbar">
+
+    <div class="navbar-left">
+        <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+        <div class="logo">Loan AI</div>
+    </div>
+
+    <div class="user">
+        Welcome, {{ user if user else current_user.id }}
+    </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" onclick="toggleSidebar()">✖</a>
+    <a href="/">Home</a>
+    <a href="/history">History</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="toggleSidebar()"></div>
+
+
+
+
+
+
+<!-- HERO SECTION -->
+<div class="hero">
+    <div class="hero-box">
+
+        <div class="hero-text">
+            <h1>Check Your Loan Eligibility Instantly</h1>
+            <p>Enter your financial details and get AI-powered prediction in seconds.</p>
+        </div>
+
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='imageeeee.png') }}">
+        </div>
+
+    </div>
+</div>
+
+<!-- FORM SECTION -->
+<div class="form-container">
+
+    <div class="form-card">
+        <h2>Applicant Details</h2>
+
+        <form action="/predict" method="POST">
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Applicant Age (Years)</label>
+                    <input type="number" name="person_age" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Applicant Gender</label>
+                    <select name="person_gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Education Level</label>
+                    <select name="person_education">
+                        <option value="MASTER">Master</option>
+                        <option value="HIGH_SCHOOL">High School</option>
+                        <option value="BACHELORS">Bachelors</option>
+                        <option value="GRADUATE">Graduate</option>
+                        <option value="ASSOCIATE">Associate</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Housing Status</label>
+                    <select name="person_home_ownership">
+                        <option value="RENT">Rent</option>
+                        <option value="OWN">Own</option>
+                        <option value="MORTGAGE">Mortgage</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Annual Income (₹)</label>
+                    <input type="number" name="person_income" placeholder="e.g. 600000 per year">
+                </div>
+
+                <div class="input-group">
+                    <label>Requested Loan Amount (₹)</label>
+                    <input type="number" name="loan_amount">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Interest Rate (%)</label>
+                    <input type="number" step="0.01" name="loan_int_rate">
+                </div>
+
+                <div class="input-group">
+                    <label>Loan-to-Income Ratio (%)</label>
+                    <input type="number" step="0.01" name="loan_percent_income">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Credit History Length (Years)</label>
+                    <input type="number" name="cb_person_cred_hist_length">
+                </div>
+
+                <div class="input-group">
+                    <label>Employment Experience (Years)</label>
+                    <input type="number" name="person_emp_exp">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Credit Score (CIBIL)</label>
+                    <input type="number" name="credit_score">
+                </div>
+
+                <div class="input-group">
+                    <label>Previous Loan Defaults</label>
+                    <select name="previous_loan_defaults_on_file">
+                        <option value="YES">Yes</option>
+                        <option value="NO">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group full">
+                    <label>Purpose of Loan</label>
+                    <select name="loan_intent">
+                        <option value="0">Personal</option>
+                        <option value="1">Education</option>
+                        <option value="2">Medical</option>
+                        <option value="3">Business</option>
+                         <option value="4">Venture</option>
+                        <option value="5">Home Improovement</option>
+                        <option value="6">Debt Consolidation</option>
+                        <option value="7">Business</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit">Predict Loan Status</button>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
