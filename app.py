@@ -1,14 +1,16 @@
+
 import psycopg2
 from flask import Flask, render_template, request, redirect, send_file
 import pandas as pd
 import joblib
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+import os
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
-import os
 import io
 from datetime import datetime
 
@@ -16,14 +18,10 @@ from datetime import datetime
 def get_db_connection():
     url = os.environ.get("DATABASE_URL")
 
-    if not url:
-        raise Exception("DATABASE_URL not set")
-
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
 
-    return psycopg2.connect(url, sslmode='require')
-
+    return psycopg2.connect(url)
 
 # ---------------- APP SETUP ----------------
 app = Flask(__name__)
@@ -60,11 +58,10 @@ def load_user(user_id):
 model = joblib.load("loan_model.pkl")
 feature_names = joblib.load("feature_names.pkl")
 
-# ---------------- PREDICTION FUNCTION ----------------
+# ---------------- PREDICTION ----------------
 def predict_loan(input_data_dict):
 
     input_df = pd.DataFrame([input_data_dict])
-
     input_df["loan_to_income_ratio"] = input_df["loan_amnt"] / input_df["person_income"]
 
     input_df_encoded = pd.get_dummies(input_df)
@@ -84,14 +81,11 @@ def predict_loan(input_data_dict):
     else:
         risk = "High Risk"
 
-    if default_prob > 60:
-        decision = "Loan Rejected"
-    else:
-        decision = "Loan Approved"
+    decision = "Loan Rejected" if default_prob > 60 else "Loan Approved"
 
-    return decision, risk, round(default_prob, 2)
+    return decision, risk, float(round(default_prob, 2))
 
-
+# ---------------- FEATURE IMPORTANCE ----------------
 def calculate_feature_importance(input_data):
     score = input_data["credit_score"]
     income = input_data["person_income"]
@@ -107,11 +101,8 @@ def calculate_feature_importance(input_data):
     income_p = (income_weight / total) * 100
     loan_p = (loan_weight / total) * 100
 
-    # Fix rounding drift
-    total_sum = credit + income_p + loan_p
-    correction = 100 - total_sum
-
-    credit += correction  # adjust one value slightly
+    correction = 100 - (credit + income_p + loan_p)
+    credit += correction
 
     return [
         ("Credit Score", round(credit, 1)),
@@ -119,7 +110,7 @@ def calculate_feature_importance(input_data):
         ("Loan Amount", round(loan_p, 1))
     ]
 
-# ---------------- EXPLANATION FUNCTION ----------------
+# ---------------- EXPLANATION ----------------
 def generate_explanation(input_data, default_prob):
     reasons = []
 
@@ -157,10 +148,7 @@ def generate_explanation(input_data, default_prob):
 
     return reasons
 
-# ---------------- PDF FUNCTION ----------------
-
-
-
+# ---------------- PDF ----------------
 def generate_pdf(data):
 
     buffer = io.BytesIO()
@@ -325,7 +313,7 @@ def generate_pdf(data):
 @app.route('/')
 @login_required
 def home():
-    return render_template('index.html', user=current_user.id)
+    return render_template('index.html', user=current_user.username)
 
 # ---------------- SIGNUP ----------------
 @app.route('/signup', methods=['GET', 'POST'])
@@ -335,28 +323,9 @@ def signup():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        confirm_password = request.form['confirm_password']
-
-        if password != confirm_password:
-            return render_template('signup.html', error="Passwords do not match ❌")
-
-        if len(password) < 6:
-            return render_template('signup.html', error="Password must be at least 6 characters ❌")
 
         conn = get_db_connection()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
-        if cur.fetchone():
-            cur.close()
-            conn.close()
-            return render_template('signup.html', error="Username already exists ❌")
-
-        cur.execute("SELECT * FROM users WHERE email=%s", (email,))
-        if cur.fetchone():
-            cur.close()
-            conn.close()
-            return render_template('signup.html', error="Email already registered ❌")
 
         hashed_password = generate_password_hash(password)
 
@@ -385,7 +354,7 @@ def login():
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT * FROM users WHERE username=%s OR email=%s",
+            "SELECT id, username, password FROM users WHERE username=%s OR email=%s",
             (login_id, login_id)
         )
         user = cur.fetchone()
@@ -394,12 +363,12 @@ def login():
         conn.close()
 
         if not user:
-            return render_template('login.html', error="User not found ❌")
+            return render_template('login.html', error="User not found")
 
         if not check_password_hash(user[2], password):
-            return render_template('login.html', error="Invalid password ❌")
+            return render_template('login.html', error="Invalid password")
 
-        login_user(User(user[1]))
+        login_user(User(user[0], user[1]))
         return redirect('/')
 
     return render_template('login.html')
@@ -415,65 +384,69 @@ def logout():
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
+    try:
+        input_data = {
+            "person_age": int(request.form["person_age"]),
+            "person_income": float(request.form["person_income"]),
+            "person_emp_exp": float(request.form["person_emp_exp"]),
+            "loan_amnt": float(request.form["loan_amount"]),
+            "loan_percent_income": float(request.form["loan_percent_income"]) / 100,
+            "credit_score": float(request.form["credit_score"]),
+            "loan_intent": request.form["loan_intent"].upper(),
+            "person_gender": request.form["person_gender"].lower(),
+            "person_home_ownership": request.form["person_home_ownership"].upper()
+        }
 
-    input_data = {
-        "person_age": int(request.form["person_age"]),
-        "person_income": float(request.form["person_income"]),
-        "person_emp_exp": float(request.form["person_emp_exp"]),
-        "loan_amnt": float(request.form["loan_amount"]),
-        "loan_percent_income": float(request.form["loan_percent_income"]) / 100,
-        "credit_score": float(request.form["credit_score"]),
-        "loan_intent": request.form["loan_intent"].upper(),
-        "person_gender": request.form["person_gender"].lower(),
-        "person_home_ownership": request.form["person_home_ownership"].upper()
-    }
+        decision, risk, default_prob = predict_loan(input_data)
+        approval_prob = 100 - default_prob
 
-    decision, risk, default_prob = predict_loan(input_data)
-    approval_prob = 100 - default_prob
+        explanations = generate_explanation(input_data, default_prob)
+        feature_data = calculate_feature_importance(input_data)
 
-    explanations = generate_explanation(input_data, default_prob)
-    feature_data = calculate_feature_importance(input_data)
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+    str(current_user.username),
+    float(input_data["person_income"]),
+    float(input_data["loan_amnt"]),
+    float(input_data["credit_score"]),
+    float(default_prob),
+    str(decision)
+))
 
-    cur.execute("""
-    INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        current_user.id,
-        input_data["person_income"],
-        input_data["loan_amnt"],
-        input_data["credit_score"],
-        default_prob,
-        decision
-    ))
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        return render_template(
+            "result.html",
+            approval_status=decision,
+            probability=default_prob,
+            approval_prob=approval_prob,
+            risk=risk,
+            income=input_data["person_income"],
+            loan=input_data["loan_amnt"],
+            credit=input_data["credit_score"],
+            explanations=explanations,
+            feature_data=feature_data,
+            user=current_user.username
+        )
 
-    return render_template(
-        "result.html",
-        approval_status=decision,
-        probability=default_prob,
-        approval_prob=approval_prob,
-        risk=risk,
-        income=input_data["person_income"],
-        loan=input_data["loan_amnt"],
-        credit=input_data["credit_score"],
-        explanations=explanations,
-        feature_data=feature_data,
-        user=current_user.id
-    )
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 
 # ---------------- DOWNLOAD PDF ----------------
+
 @app.route('/download_report')
 @login_required
 def download_report():
 
     data = {
-        "user": current_user.id,
+        "user": current_user.username,
         "income": request.args.get("income"),
         "loan": request.args.get("loan"),
         "credit": request.args.get("credit"),
@@ -485,13 +458,16 @@ def download_report():
     }
 
     pdf = generate_pdf(data)
-    
+
     return send_file(
         pdf,
         as_attachment=True,
         download_name="loan_report.pdf",
         mimetype='application/pdf'
     )
+    
+
+
 
 # ---------------- HISTORY ----------------
 @app.route('/history')
@@ -502,7 +478,7 @@ def history():
 
     cur.execute(
         "SELECT income, loan, credit_score, probability, decision FROM predictions WHERE username=%s",
-        (current_user.id,)
+        (current_user.username,)
     )
 
     data = cur.fetchall()
@@ -511,6 +487,7 @@ def history():
     conn.close()
 
     return render_template("history.html", data=data)
+
 
 # ---------------- DASHBOARD ----------------
 @app.route('/dashboard')
@@ -524,7 +501,7 @@ def dashboard():
         FROM predictions
         WHERE username=%s
         ORDER BY created_at
-    """, (current_user.id,))
+    """, (current_user.username,))
 
     data = cur.fetchall()
 
@@ -534,14 +511,14 @@ def dashboard():
     income = [row[0] for row in data]
     loan = [row[1] for row in data]
     probability = [row[2] for row in data]
-    dates = [row[4].strftime("%d-%b")for row in data]
+    dates = [row[4].strftime("%d-%b") for row in data]
 
     approved = sum(1 for row in data if row[3] == "Loan Approved")
     rejected = sum(1 for row in data if row[3] == "Loan Rejected")
 
     total = len(data)
 
-    avg_risk = round(sum(probability) / len(probability),1)if probability else 0
+    avg_risk = round(sum(probability) / len(probability), 1) if probability else 0
 
     if avg_risk < 30:
         risk_level = "Low"
@@ -563,9 +540,9 @@ def dashboard():
         total=total,
         avg_risk=avg_risk,
         dates=dates,
-        user=current_user.id,
-        risk=risk_level,  # ✅ ADD THIS
-        risk_class=risk_class  # ✅ ADD THIS
+        user=current_user.username,
+        risk=risk_level,
+        risk_class=risk_class
     )
 
 # ---------------- RUN ----------------
