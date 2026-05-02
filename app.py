@@ -13,7 +13,7 @@ from reportlab.lib.pagesizes import A4
 import io
 from datetime import datetime
 
----------------- DATABASE CONNECTION ----------------
+#---------------- DATABASE CONNECTION ----------------
 
 def get_db_connection():
 url = os.environ.get("DATABASE_URL")
@@ -25,7 +25,7 @@ return psycopg2.connect(url)
 
 ---------------- APP SETUP ----------------
 
-app = Flask(name)
+app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
 ---------------- LOGIN SETUP ----------------
