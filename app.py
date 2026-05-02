@@ -76,7 +76,7 @@ def predict_loan(input_data_dict):
 
     if default_prob < 40:
         risk = "Low Risk"
-    elif default_prob < 70:
+    elif default_prob < 55:
         risk = "Medium Risk"
     else:
         risk = "High Risk"
