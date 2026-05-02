@@ -388,21 +388,21 @@ def logout():
 @login_required
 def predict():
     try:
-        input_data = {
-            "person_age": int(request.form["person_age"]),
-            "person_income": float(request.form["person_income"]),
-            "person_emp_exp": float(request.form["person_emp_exp"]),
-            "loan_amnt": float(request.form["loan_amount"]),
-            "loan_percent_income": float(request.form["loan_percent_income"]) ,
-            "credit_score": float(request.form["credit_score"]),
-            "loan_int_rate":float(request.form["interest_rate"]),
-            "cb_person_credit_history_length":request.form["credit_history"],
-            "education": request.form["education"].upper(),
-            "previous_loan_defaults_on_file":request.form["loan_defaults"].upper(),
-            "loan_intent": request.form["loan_intent"].upper(),
-            "person_gender": request.form["person_gender"].lower(),
-            "person_home_ownership": request.form["person_home_ownership"].upper()
-        }
+       input_data = {
+    "person_age": int(request.form["person_age"]),
+    "person_income": float(request.form["person_income"]),
+    "person_emp_exp": float(request.form["person_emp_exp"]),
+    "loan_amnt": float(request.form["loan_amount"]),
+    "loan_percent_income": float(request.form["loan_percent_income"]),
+    "credit_score": float(request.form["credit_score"]),
+    "loan_int_rate": float(request.form["interest_rate"]),
+    "cb_person_credit_history_length": float(request.form["credit_history"]),
+    "education": request.form["education"].upper(),
+    "previous_loan_defaults_on_file": request.form["loan_defaults"].upper(),
+    "loan_intent": request.form["loan_intent"].upper(),
+    "person_gender": request.form["person_gender"].lower(),
+    "person_home_ownership": request.form["person_home_ownership"].upper()
+}
 
         decision, risk, default_prob = predict_loan(input_data)
         approval_prob = 100 - default_prob
