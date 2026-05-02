@@ -16,7 +16,7 @@ from datetime import datetime
 #---------------- DATABASE CONNECTION ----------------
 
 def get_db_connection():
-url = os.environ.get("DATABASE_URL")
+    url = os.environ.get("DATABASE_URL")
 
 if url.startswith("postgres://"):  
     url = url.replace("postgres://", "postgresql://", 1)  
