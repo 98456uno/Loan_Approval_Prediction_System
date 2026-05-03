@@ -62,8 +62,6 @@ feature_names = joblib.load("feature_names.pkl")
 def predict_loan(input_data_dict):
 
     input_df = pd.DataFrame([input_data_dict])
-
-    # ✅ Loan-to-Income Ratio (correctly calculated)
     input_df["loan_to_income_ratio"] = input_df["loan_amnt"] / input_df["person_income"]
 
     input_df_encoded = pd.get_dummies(input_df)
@@ -74,24 +72,18 @@ def predict_loan(input_data_dict):
 
     input_df_final = input_df_encoded[feature_names]
 
-    # ✅ FIXED PROBABILITY HANDLING
-    probs = model.predict_proba(input_df_final)[0]
+    default_prob = model.predict_proba(input_df_final)[0][1] * 100
 
-    approval_prob = probs[0] * 100   # No Default (Safe)
-    default_prob = probs[1] * 100    # Default Risk
-
-    # ✅ CLEAN DECISION LOGIC
-    if default_prob > 60:
-        decision = "Loan Rejected"
-        risk = "High Risk"
-    elif default_prob < 30:
-        decision = "Loan Approved"
+    if default_prob < 30:
         risk = "Low Risk"
-    else:
-        decision = "Loan Approved"
+    elif default_prob < 60:
         risk = "Medium Risk"
+    else:
+        risk = "High Risk"
 
-    return decision, round(default_prob, 2), round(approval_prob, 2), risk
+    decision = "Loan Rejected" if default_prob > 60 else "Loan Approved"
+
+    return decision, risk, float(round(default_prob, 2))
 
 # ---------------- FEATURE IMPORTANCE ----------------
 def calculate_feature_importance(input_data):
@@ -392,57 +384,60 @@ def logout():
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
+    try:
+        input_data = {
+            "person_age": int(request.form["person_age"]),
+            "person_income": float(request.form["person_income"]),
+            "person_emp_exp": float(request.form["person_emp_exp"]),
+            "loan_amnt": float(request.form["loan_amount"]),
+            "loan_percent_income": float(request.form["loan_percent_income"]) / 100,
+            "credit_score": float(request.form["credit_score"]),
+            "loan_intent": request.form["loan_intent"].upper(),
+            "person_gender": request.form["person_gender"].lower(),
+            "person_home_ownership": request.form["person_home_ownership"].upper()
+        }
 
-    input_data = {
-        "person_age": int(request.form["person_age"]),
-        "person_income": float(request.form["person_income"]),
-        "person_emp_exp": float(request.form["person_emp_exp"]),
-        "loan_amnt": float(request.form["loan_amount"]),
-        "credit_score": float(request.form["credit_score"]),
-        "loan_intent": request.form["loan_intent"].upper(),
-        "person_gender": request.form["person_gender"].lower(),
-        "person_home_ownership": request.form["person_home_ownership"].upper()
-    }
+        decision, risk, default_prob = predict_loan(input_data)
+        approval_prob = 100 - default_prob
 
-    # ✅ UPDATED FUNCTION CALL
-    decision, default_prob, approval_prob, risk = predict_loan(input_data)
+        explanations = generate_explanation(input_data, default_prob)
+        feature_data = calculate_feature_importance(input_data)
 
-    explanations = generate_explanation(input_data, default_prob)
-    feature_data = calculate_feature_importance(input_data)
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+    str(current_user.username),
+    float(input_data["person_income"]),
+    float(input_data["loan_amnt"]),
+    float(input_data["credit_score"]),
+    float(default_prob),
+    str(decision)
+))
 
-    # ✅ USE USERNAME (IMPORTANT)
-    cur.execute("""
-    INSERT INTO predictions (username, income, loan, credit_score, probability, decision)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        current_user.username,
-        input_data["person_income"],
-        input_data["loan_amnt"],
-        input_data["credit_score"],
-        default_prob,
-        decision
-    ))
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        return render_template(
+            "result.html",
+            approval_status=decision,
+            probability=default_prob,
+            approval_prob=approval_prob,
+            risk=risk,
+            income=input_data["person_income"],
+            loan=input_data["loan_amnt"],
+            credit=input_data["credit_score"],
+            explanations=explanations,
+            feature_data=feature_data,
+            user=current_user.username
+        )
 
-    return render_template(
-        "result.html",
-        approval_status=decision,
-        probability=default_prob,        # Default Risk
-        approval_prob=approval_prob,     # Correct Approval %
-        risk=risk,
-        income=input_data["person_income"],
-        loan=input_data["loan_amnt"],
-        credit=input_data["credit_score"],
-        explanations=explanations,
-        feature_data=feature_data,
-        user=current_user.username
-    )
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 
 # ---------------- DOWNLOAD PDF ----------------
 
